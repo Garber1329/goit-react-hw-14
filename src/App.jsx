@@ -11,10 +11,12 @@ import './App.css'
 export default class App extends Component {
   state = {
     images: [],
-    page: 12,
+    page: 1,
+    perPage: 12,
     modalImg: '',
     filter: '',
-    loader: false
+    loader: false,
+    scrollPosition: 0
   }
 
   windowKey = () => {
@@ -30,25 +32,26 @@ export default class App extends Component {
   async componentDidUpdate(prevProps, prevState) {
 
     if (prevState.page != this.state.page) {
+      this.scrollPosition = window.scrollY
       this.setState({
         loader: true
       })
       
-      const response = await axios.get(`https://pixabay.com/api/?key=54704699-3f81b1e0c8e2f8e619912e89c&q=${this.state.filter}&image_type=photo&orientation=horizontal&per_page=${this.state.page}`)
+      const response = await axios.get(`https://pixabay.com/api/?key=54704699-3f81b1e0c8e2f8e619912e89c&q=${this.state.filter}&image_type=photo&orientation=horizontal&page=${this.state.page}&per_page=${this.state.perPage}`)
 
       this.setState({
-        images: response.data.hits,
+        images: [...this.state.images, ...response.data.hits],
         loader: false
-      })
+      }, () => window.scrollTo(0, this.scrollPosition))
     }
 
     if (prevState.filter != this.state.filter) {
       this.setState({
-        page: 12,
+        page: 1,
         loader: true
       })
 
-      const response = await axios.get(`https://pixabay.com/api/?key=54704699-3f81b1e0c8e2f8e619912e89c&q=${this.state.filter}&image_type=photo&orientation=horizontal&per_page=${this.state.page}`)
+      const response = await axios.get(`https://pixabay.com/api/?key=54704699-3f81b1e0c8e2f8e619912e89c&q=${this.state.filter}&image_type=photo&orientation=horizontal&page=1&per_page=${this.state.perPage}`)
 
       this.setState({
         images: response.data.hits,
@@ -61,9 +64,8 @@ export default class App extends Component {
 
   loaderButton = () => {
     this.setState({
-      page: Number(this.state.page) + 12
+      page: this.state.page + 1
     })
-    console.log(this.state.page)
   }
 
   modalImg = (img) => {
@@ -75,7 +77,7 @@ export default class App extends Component {
   filterInfo = (info) => {
     this.setState({
       filter: info,
-      page: ''
+      page: 1
     })
   }
 
@@ -89,7 +91,7 @@ export default class App extends Component {
         {loader && <MyLoader />}
         {!loader && <ImageGallery>
           {images.map(e => (
-            <ImageGalleryItem key={e.id} img={e.previewURL} modalImg={this.modalImg} />
+            <ImageGalleryItem key={e.id} img={e.webformatURL} largeImg={e.largeImageURL} modalImg={this.modalImg} />
           ))}
         </ImageGallery>}
 
